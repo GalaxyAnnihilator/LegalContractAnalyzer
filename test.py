@@ -1,7 +1,7 @@
 import os
 from openai import OpenAI
 
-API_KEY = os.getenv("OPENAI_API_KEY", "sk-fake-for-testing")
+API_KEY = os.getenv("OPENAI_API_KEY", "TRANMINHDUONGDEPTRAI")
 BASE_URL = "https://glowing-workable-arachnid.ngrok-free.app/v1"
 
 client = OpenAI(api_key=API_KEY, base_url=BASE_URL)
@@ -20,4 +20,5 @@ for event in stream:
     # If the model is still generating, .delta.content will hold the next token(s)
     if delta := choice.delta.content:
         print(delta, end="", flush=True)
-    print("\n")    
+
+print("\n")    
