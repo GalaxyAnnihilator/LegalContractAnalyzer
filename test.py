@@ -19,7 +19,10 @@ print("Succesfully created a client instance")
 
 stream = client.chat.completions.create(
     model="Qwen3-0.6B",
-    messages=[{"role":"user","content":"Do you know what RAG technology is?"}],
+    messages=[
+        
+        {"role":"user","content":"Thủ tướng việt nam là ai"}
+    ],
     temperature=0.7,
     max_tokens=512,
     stream=True,
