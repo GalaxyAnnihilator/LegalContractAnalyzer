@@ -185,9 +185,6 @@ document.addEventListener("DOMContentLoaded", function () {
     addMessageToChat("user", message);
     userInput.value = "";
 
-    // Add placeholder bot message and keep reference
-    const botMessageElement = addMessageToChat("bot", "Thinking...");
-
     // Get real bot response
     const botResponse = await generateBotResponse(message);
 
@@ -211,7 +208,7 @@ document.addEventListener("DOMContentLoaded", function () {
     if (sender === "bot") {
       const botIcon = document.createElement("div");
       botIcon.className = "flex-shrink-0 mr-2";
-      botIcon.innerHTML = '<i class="fas fa-robot text-gray-500 mt-1"></i>';
+      botIcon.innerHTML = '<i class="fas fa-robot text-gray-500"></i>';
       messageDiv.appendChild(botIcon);
     }
 
@@ -219,8 +216,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (sender === "user") {
       const userIcon = document.createElement("div");
-      userIcon.className = "flex-shrink-0 ml-2";
-      userIcon.innerHTML = '<i class="fas fa-user text-indigo-200 mt-1"></i>';
+      userIcon.className = "flex flex-shrink-0 ml-2 items-center";
+      userIcon.innerHTML = '<i class="fas fa-user text-indigo-200"></i>';
       messageDiv.appendChild(userIcon);
     }
 
@@ -290,24 +287,21 @@ document.addEventListener("DOMContentLoaded", function () {
               let thinkHtml = "";
               if (thinkMatch) {
                 const thinkText = thinkMatch[1].trim();
-                // wrap in your styled block
-                thinkHtml = `<div class="thinking-block">${thinkText
+                thinkHtml = `<div class="thinking-block bg-gray-100 border-l-4 border-blue-500 italic text-gray-600 p-3 my-2 rounded">${thinkText
                   .replace(/</g, "&lt;")
                   .replace(/>/g, "&gt;")
-                  .replace(/\n/g, "<br>")}</div>\n\n`;
+                  .replace(/\n/g, "<br>")}</div>`;
               }
 
-              // 2) Remove the original <think>…</think> from the markdown body
+              // Remove the thinking tags from the markdown body
               const withoutThink = fullReply
-                .replace(/<think>[\s\S]*?<\/think>/, "")
+                .replace(/<think>[\s\S]*?<\/think>/g, "")
                 .trim();
 
-              // 3) Convert the rest via Showdown
+              // Convert the rest via Showdown and update display
               const restHtml = converter.makeHtml(withoutThink);
-
-              // 4) Combine
-              messageDiv.querySelector(".chat-message").innerHTML =
-                thinkHtml + restHtml;
+              const finalHtml = thinkHtml + (restHtml || "");
+              messageDiv.querySelector(".chat-message").innerHTML = finalHtml || " ";
               chatContainer.scrollTop = chatContainer.scrollHeight;
             }
           } catch (err) {
