@@ -1,0 +1,7 @@
+chromadb
+sentence-transformers
+pdfplumber
+os
+re
+uuid
+tqdm
