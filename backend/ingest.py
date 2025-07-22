@@ -80,11 +80,11 @@ def ingest_pdf(pdf_path):
     ids  = [uuid.uuid4().hex for _ in all_chunks]
     collection.add(documents=all_chunks, embeddings=embs, ids=ids)
 
-def ingest_all(pdf_dir="./data"):
+def ingest_all(pdf_dir):
     for fn in os.listdir(pdf_dir):
         if fn.lower().endswith(".pdf"):
             ingest_pdf(os.path.join(pdf_dir, fn))
 
 if __name__ == "__main__":
-    ingest_all()
+    ingest_all("./downloaded_pdfs")
     print("✅ Ingestion complete.")

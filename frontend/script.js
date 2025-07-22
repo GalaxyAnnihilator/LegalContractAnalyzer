@@ -1,6 +1,21 @@
 document.addEventListener("DOMContentLoaded", function () {
-  // On load, fetch existing PDFs from Supabase
-  fetchExistingSupabasePDFs();
+  waitForSupabaseClient().then(() => {
+    fetchExistingSupabasePDFs();
+  });
+
+  // Waits for SUPABASE_KEY and SUPABASE_URL to be set
+  function waitForSupabaseClient() {
+    return new Promise((resolve) => {
+      function check() {
+        if (typeof supabase_client !== 'undefined' && supabase_client && supabase_client.storage) {
+          resolve();
+        } else {
+          setTimeout(check, 50);
+        }
+      }
+      check();
+    });
+  }
   // ─── Fetch Existing PDFs from Supabase ─────────────────────────────
   async function fetchExistingSupabasePDFs() {
     if (typeof listPDFs !== "function") {
@@ -24,6 +39,7 @@ document.addEventListener("DOMContentLoaded", function () {
           showEmbedButton();
           embeddingStatus.textContent = "Uploaded";
         }
+        updateStatus("Succesfully fetched previously uploaded pdfs")
       }
     } catch (err) {
       console.error("Error fetching Supabase PDFs:", err);

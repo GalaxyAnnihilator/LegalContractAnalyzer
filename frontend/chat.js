@@ -78,7 +78,7 @@ async function generateBotResponse(userMessage) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: "Bearer TRANMINHDUONGDEPTRAI",
+        Authorization: `Bearer ${OPENAI_API_KEY}`,
       },
       body: JSON.stringify(payload),
     }

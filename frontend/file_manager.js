@@ -1,9 +1,15 @@
-const SUPABASE_URL = 'https://xutirujbqolvqajzipjp.supabase.co';
-const SUPABASE_KEY =  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh1dGlydWpicW9sdnFhanppcGpwIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MzE2ODAwNywiZXhwIjoyMDY4NzQ0MDA3fQ.1cNOFUqZzf4j3WKjy7_XTOfbXcwBj2FLWChVJLsmVBc';
+var SUPABASE_KEY, SUPABASE_URL, supabase_client;
+
+fetchApiKeys().then((keys)=>{
+  SUPABASE_URL = keys.SUPABASE_URL;
+  SUPABASE_KEY = keys.SUPABASE_KEY;
+  OPENAI_API_KEY = keys.OPENAI_API_KEY;
+  supabase_client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  console.log("Succesfully created a supabase client")
+});
+  
 const bucketName = 'legal-docs';
 
-const supabase_client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-console.log("Succesfully created a supabase client")
 
 // Upload a PDF file
 async function uploadPDF(file) {
@@ -29,7 +35,7 @@ async function listPDFs() {
   if (error) {
     console.error("List error:", error);
   } else {
-    console.log("Files:", data);
+    console.log("Succesfully retrieved files:", data);
     return data;
   }
 }
