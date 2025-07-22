@@ -1,10 +1,10 @@
 chromadb
+openai
 pdfplumber
-os
-re
 uuid
-tqdm
 dotenv
 supabase
 fastapi
 uvicorn
+aiofiles 
+python-multipart

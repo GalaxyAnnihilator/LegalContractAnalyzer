@@ -4,9 +4,9 @@ from fastapi.middleware.cors import CORSMiddleware
 
 import os
 import shutil
-from retrieve_documents import download_all_files
-from ingest import ingest_all
-from query import query_top_k
+from backend.retrieve_documents import download_all_files
+from backend.ingest import ingest_all
+from backend.query import query_top_k
 from dotenv import dotenv_values
 
 app = FastAPI()
