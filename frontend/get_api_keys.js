@@ -7,6 +7,7 @@ async function fetchApiKeys() {
       throw new Error(`Server error: ${response.status}`);
     }
     const keys = await response.json();
+    console.log(keys)
     return keys;
   } catch (err) {
     console.error("❌ Failed to retrieve API keys:", err);

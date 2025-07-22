@@ -72,7 +72,7 @@ def query_api(payload: dict):
 
 @app.get("/api_key")
 def expose_api_key():
-    keys = dotenv_values("../.env")
+    keys = dotenv_values(".env")
     return keys        
 
 @app.get("/")
@@ -80,4 +80,4 @@ def root():
     return {"message": "Backend API is running <3. Try /upload_pdf , /retrieve_documents , /ingest, /query"}
 
 if __name__ == "__main__":
-    os.system("uvicorn main:app --reload --host 0.0.0.0 --port 3012")
+    os.system("uvicorn backend.main:app --reload --host 0.0.0.0 --port 3012")
