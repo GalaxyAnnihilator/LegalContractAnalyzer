@@ -1,5 +1,34 @@
-const converter = new showdown.Converter({ simpleLineBreaks: true });
 document.addEventListener("DOMContentLoaded", function () {
+  // On load, fetch existing PDFs from Supabase
+  fetchExistingSupabasePDFs();
+  // ─── Fetch Existing PDFs from Supabase ─────────────────────────────
+  async function fetchExistingSupabasePDFs() {
+    if (typeof listPDFs !== "function") {
+      console.warn("listPDFs() not found. Supabase client not loaded?");
+      return;
+    }
+    try {
+      const files = await listPDFs();
+      if (Array.isArray(files)) {
+        files.forEach(f => {
+          if (f.name === '.emptyFolderPlaceholder') return; // Skip placeholder
+          if (!uploadedFiles.some(uf => uf.name === f.name)) {
+            uploadedFiles.push({ name: f.name, type: "application/pdf", fromSupabase: true });
+            embeddedFiles[f.name] = true;
+          }
+        });
+        renderFileList();
+        updateDocumentCount();
+        if (uploadedFiles.length > 0) {
+          enableChat();
+          showEmbedButton();
+          embeddingStatus.textContent = "Uploaded";
+        }
+      }
+    } catch (err) {
+      console.error("Error fetching Supabase PDFs:", err);
+    }
+  }
   // DOM Elements
   const dropzone = document.getElementById("dropzone");
   const fileInput = document.getElementById("fileInput");
@@ -12,17 +41,19 @@ document.addEventListener("DOMContentLoaded", function () {
   const statusMessage = document.getElementById("statusMessage");
   const docCount = document.getElementById("docCount");
   const embeddingStatus = document.getElementById("embeddingStatus");
-  const chatContainer = document.getElementById("chatContainer");
   const userInput = document.getElementById("userInput");
   const sendBtn = document.getElementById("sendBtn");
+
+  // Embed Documents Button
+  let embedBtn = null;
 
   // State
   let uploadedFiles = [];
   let currentSystemPrompt = systemPrompt.value;
   let chatHistory = [];
+  let embeddedFiles = {}; // { filename: true/false }
 
   // Event Listeners
-  dropzone.addEventListener("click", () => fileInput.click());
   selectFilesBtn.addEventListener("click", () => fileInput.click());
 
   fileInput.addEventListener("change", handleFileSelect);
@@ -58,6 +89,7 @@ document.addEventListener("DOMContentLoaded", function () {
   sendBtn.addEventListener("click", sendMessage);
 
   // Functions
+  // ─── Handles File Selection and Validation ─────────────────────────────
   function handleFileSelect(e) {
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
@@ -70,11 +102,19 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     if (pdfFiles.length > 0) {
-      uploadedFiles = [...uploadedFiles, ...pdfFiles];
+      // Only add files not already present (by name)
+      pdfFiles.forEach(f => {
+        if (!uploadedFiles.some(uf => uf.name === f.name)) {
+          uploadedFiles.push(f);
+        }
+      });
       renderFileList();
       updateStatus(`${pdfFiles.length} PDF(s) selected`, "success");
       updateDocumentCount();
       enableChat();
+
+      // Show Embed Documents button if not present
+      showEmbedButton();
 
       // Simulate processing
       setTimeout(() => {
@@ -87,6 +127,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
+  // ─── Renders Uploaded Files List to Sidebar ────────────────────────────
   function renderFileList() {
     fileList.innerHTML = "";
     uploadedFiles.forEach((file, index) => {
@@ -96,7 +137,8 @@ document.addEventListener("DOMContentLoaded", function () {
       fileItem.innerHTML = `
                         <div class="flex items-center">
                             <i class="fas fa-file-pdf text-red-500 mr-2"></i>
-                            <span class="text-sm truncate max-w-xs">${file.name}</span>
+                            <span class="file-link text-sm truncate max-w-xs cursor-pointer hover:underline" data-filename="${file.name}">${file.name}</span>
+                            <span class="ml-2 text-xs ${embeddedFiles[file.name] ? 'text-green-600' : 'text-gray-400'}">${embeddedFiles[file.name] ? 'Embedded' : ''}</span>
                         </div>
                         <button class="text-red-500 hover:text-red-700" data-index="${index}">
                             <i class="fas fa-times"></i>
@@ -105,25 +147,118 @@ document.addEventListener("DOMContentLoaded", function () {
       fileList.appendChild(fileItem);
     });
 
+    // Add event listeners for file name hover/click to open public URL
+    document.querySelectorAll('.file-link').forEach((el) => {
+      el.addEventListener('mouseenter', async (e) => {
+        const filename = e.currentTarget.getAttribute('data-filename');
+        if (typeof getPublicPDFUrl === 'function') {
+          try {
+            const url = await getPublicPDFUrl(filename);
+            e.currentTarget.setAttribute('data-url', url);
+          } catch (err) {
+            // Ignore
+          }
+        }
+      });
+      el.addEventListener('click', async (e) => {
+        const filename = e.currentTarget.getAttribute('data-filename');
+        let url = e.currentTarget.getAttribute('data-url');
+        if (!url && typeof getPublicPDFUrl === 'function') {
+          url = await getPublicPDFUrl(filename);
+        }
+        if (url) {
+          window.open(url, '_blank');
+        }
+      });
+    });
+
     // Add event listeners to delete buttons
     document.querySelectorAll("#fileList button").forEach((btn) => {
-      btn.addEventListener("click", (e) => {
+      btn.addEventListener("click", async (e) => {
         const index = parseInt(e.currentTarget.getAttribute("data-index"));
-        uploadedFiles.splice(index, 1);
+        const removed = uploadedFiles.splice(index, 1)[0];
+        if (removed && embeddedFiles[removed.name]) {
+          // Try to delete from Supabase if it came from there
+          if (typeof deletePDF === "function" && removed.fromSupabase) {
+            try {
+              await deletePDF(removed.name);
+              updateStatus(`Deleted ${removed.name} from Supabase.`, "success");
+            } catch (err) {
+              updateStatus(`Error deleting ${removed.name} from Supabase: ${err.message || err}`, "error");
+            }
+          }
+          delete embeddedFiles[removed.name];
+        }
         renderFileList();
         updateDocumentCount();
         if (uploadedFiles.length === 0) {
           disableChat();
           embeddingStatus.textContent = "None";
+          hideEmbedButton();
         }
       });
     });
   }
+  // ─── Show/Hide Embed Documents Button ─────────────────────────────
+  function showEmbedButton() {
+    if (!embedBtn) {
+      embedBtn = document.createElement("button");
+      embedBtn.id = "embedBtn";
+      embedBtn.className = "mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition w-full";
+      embedBtn.innerHTML = '<i class="fas fa-brain mr-2"></i>Upload to database and Embed documents';
+      embedBtn.addEventListener("click", embedDocumentsHandler);
+      // Insert after fileList
+      fileList.parentNode.insertBefore(embedBtn, fileList.nextSibling);
+    }
+    embedBtn.style.display = "block";
+  }
 
+  function hideEmbedButton() {
+    if (embedBtn) embedBtn.style.display = "none";
+  }
+
+  // ─── Embedding Handler ────────────────────────────────────────────
+  async function embedDocumentsHandler() {
+    if (uploadedFiles.length === 0) return;
+    updateStatus("Uploading PDFs to Supabase...", "processing");
+    embeddingStatus.textContent = "Uploading...";
+    embedBtn.disabled = true;
+    let uploadedCount = 0;
+    for (const file of uploadedFiles) {
+      if (embeddedFiles[file.name]) {
+        continue; // Skip already uploaded
+      }
+      try {
+        // Upload to Supabase
+        if (typeof uploadPDF === "function") {
+          await uploadPDF(file);
+        } else {
+          throw new Error("uploadPDF() not found");
+        }
+        embeddedFiles[file.name] = true;
+        uploadedCount++;
+        renderFileList();
+        updateStatus(`Uploaded ${file.name} to Supabase!`, "success");
+      } catch (err) {
+        updateStatus(`Error uploading ${file.name}: ${err.message || err}`, "error");
+      }
+    }
+    if (uploadedCount > 0) {
+      updateStatus(`Uploaded ${uploadedCount} file(s) to Supabase!`, "success");
+      embeddingStatus.textContent = "Uploaded";
+    } else {
+      updateStatus("No new files uploaded.", "warning");
+      embeddingStatus.textContent = "Ready";
+    }
+    embedBtn.disabled = false;
+  }
+
+  // ─── Updates Number of Uploaded Documents ─────────────────────────────
   function updateDocumentCount() {
     docCount.textContent = uploadedFiles.length;
   }
 
+  // ─── Saves System Prompt for Chat Context ─────────────────────────────
   function saveSystemPrompt() {
     currentSystemPrompt = systemPrompt.value;
     updateStatus("System prompt saved successfully", "success");
@@ -135,6 +270,7 @@ document.addEventListener("DOMContentLoaded", function () {
     );
   }
 
+  // ─── Visually Updates the Status Indicator and Message ────────────────
   function updateStatus(message, type) {
     statusText.textContent = message;
 
@@ -164,154 +300,4 @@ document.addEventListener("DOMContentLoaded", function () {
         statusMessage.classList.add("bg-gray-100");
     }
   }
-
-  function enableChat() {
-    userInput.disabled = false;
-    sendBtn.disabled = false;
-    userInput.placeholder = "Type your question here...";
-  }
-
-  function disableChat() {
-    userInput.disabled = true;
-    sendBtn.disabled = true;
-    userInput.placeholder = "Upload documents to enable chat";
-  }
-
-  async function sendMessage() {
-    const message = userInput.value.trim();
-    if (message === "") return;
-
-    // Show user message
-    addMessageToChat("user", message);
-    userInput.value = "";
-
-    // Get real bot response
-    const botResponse = await generateBotResponse(message);
-
-    // Replace content of placeholder
-    botMessageElement.querySelector(".chat-message").innerHTML = botResponse;
-  }
-
-  function addMessageToChat(sender, message) {
-    const messageDiv = document.createElement("div");
-    messageDiv.className = `flex ${
-      sender === "user" ? "justify-end" : "justify-start"
-    }`;
-
-    const messageContent = document.createElement("div");
-    messageContent.className = `chat-message px-4 py-2 ${
-      sender === "user" ? "user-message" : "bot-message"
-    } slide-in`;
-
-    messageContent.innerHTML = message;
-
-    if (sender === "bot") {
-      const botIcon = document.createElement("div");
-      botIcon.className = "flex-shrink-0 mr-2";
-      botIcon.innerHTML = '<i class="fas fa-robot text-gray-500"></i>';
-      messageDiv.appendChild(botIcon);
-    }
-
-    messageDiv.appendChild(messageContent);
-
-    if (sender === "user") {
-      const userIcon = document.createElement("div");
-      userIcon.className = "flex flex-shrink-0 ml-2 items-center";
-      userIcon.innerHTML = '<i class="fas fa-user text-indigo-200"></i>';
-      messageDiv.appendChild(userIcon);
-    }
-
-    chatContainer.appendChild(messageDiv);
-    chatContainer.scrollTop = chatContainer.scrollHeight;
-    chatHistory.push({ sender, message });
-
-    return messageDiv;
-  }
-
-  async function generateBotResponse(userMessage) {
-    if (uploadedFiles.length === 0) {
-      return "Please upload documents first so I can provide accurate answers based on their content.";
-    }
-
-    const payload = {
-      model: "Qwen3-0.6B",
-      messages: [{ role: "user", content: userMessage }],
-      stream: true,
-    };
-
-    const response = await fetch(
-      "https://glowing-workable-arachnid.ngrok-free.app/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: "Bearer TRANMINHDUONGDEPTRAI",
-        },
-        body: JSON.stringify(payload),
-      }
-    );
-
-    if (!response.ok || !response.body) {
-      throw new Error("Streaming failed");
-    }
-
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder("utf-8");
-    let fullReply = "";
-    let messageDiv;
-
-    // Create and insert the message bubble early
-    messageDiv = addMessageToChat("bot", ""); // Empty at first
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-
-      const chunk = decoder.decode(value, { stream: true });
-
-      // FastChat/OpenAI sends chunks as lines of JSON
-      const lines = chunk.split("\n").filter((line) => line.trim() !== "");
-
-      for (const line of lines) {
-        if (line.startsWith("data:")) {
-          const dataStr = line.replace("data: ", "").trim();
-
-          if (dataStr === "[DONE]") return;
-
-          try {
-            const json = JSON.parse(dataStr);
-            const delta = json.choices?.[0]?.delta?.content;
-            if (delta) {
-              fullReply += delta;
-              const thinkMatch = fullReply.match(/<think>([\s\S]*?)<\/think>/);
-              let thinkHtml = "";
-              if (thinkMatch) {
-                const thinkText = thinkMatch[1].trim();
-                thinkHtml = `<div class="thinking-block bg-gray-100 border-l-4 border-blue-500 italic text-gray-600 p-3 my-2 rounded">${thinkText
-                  .replace(/</g, "&lt;")
-                  .replace(/>/g, "&gt;")
-                  .replace(/\n/g, "<br>")}</div>`;
-              }
-
-              // Remove the thinking tags from the markdown body
-              const withoutThink = fullReply
-                .replace(/<think>[\s\S]*?<\/think>/g, "")
-                .trim();
-
-              // Convert the rest via Showdown and update display
-              const restHtml = converter.makeHtml(withoutThink);
-              const finalHtml = thinkHtml + (restHtml || "");
-              messageDiv.querySelector(".chat-message").innerHTML = finalHtml || " ";
-              chatContainer.scrollTop = chatContainer.scrollHeight;
-            }
-          } catch (err) {
-            console.warn("Could not parse stream chunk:", err);
-          }
-        }
-      }
-    }
-  }
-
-  // Initialize
-  disableChat();
 });

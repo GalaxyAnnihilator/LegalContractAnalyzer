@@ -7,7 +7,6 @@ from openai import OpenAI
 from dotenv import load_dotenv
 
 # ─── 1) ENVIRONMENT ──────────────────────────────────────────────────────────────
-# configure your OpenAI client to call your school server
 load_dotenv()
 API_KEY = os.getenv("OPENAI_API_KEY", "TRANMINHDUONGDEPTRAI")
 BASE_URL = "https://glowing-workable-arachnid.ngrok-free.app/v1"  # or ngrok URL
@@ -81,8 +80,7 @@ def ingest_pdf(pdf_path):
     ids  = [uuid.uuid4().hex for _ in all_chunks]
     collection.add(documents=all_chunks, embeddings=embs, ids=ids)
 
-# 5) Run ingestion
-def ingest_all(pdf_dir="../data"):
+def ingest_all(pdf_dir="./data"):
     for fn in os.listdir(pdf_dir):
         if fn.lower().endswith(".pdf"):
             ingest_pdf(os.path.join(pdf_dir, fn))

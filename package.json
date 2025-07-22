@@ -1,0 +1,32 @@
+{
+  "dependencies": {
+    "@supabase/supabase-js": "^2.52.0",
+    "dompurify": "^3.2.6",
+    "node": "^20.19.4",
+    "showdown": "^2.1.0"
+  },
+  "name": "legalcontractanalyzer",
+  "description": "A RAG Chatbot that analyzes your contracts",
+  "version": "1.0.0",
+  "main": "index.js",
+  "devDependencies": {
+    "@types/dompurify": "^3.0.5",
+    "@types/showdown": "^2.0.6",
+    "typescript": "^5.8.3",
+    "vite": "^7.0.5"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/GalaxyAnnihilator/LegalContractAnalyzer.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/GalaxyAnnihilator/LegalContractAnalyzer/issues"
+  },
+  "homepage": "https://github.com/GalaxyAnnihilator/LegalContractAnalyzer#readme"
+}
