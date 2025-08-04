@@ -1,23 +1,32 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException
-from fastapi.responses import JSONResponse
+from fastapi import FastAPI, UploadFile, File, HTTPException, Request
+from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
-
+import requests
 import os
+import json
+from openai import OpenAI
 import shutil
 from backend.retrieve_documents import download_all_files
 from backend.ingest import ingest_all
 from backend.query import query_top_k
 from dotenv import dotenv_values
-
+import traceback
 app = FastAPI()
 
 UPLOAD_FOLDER = "downloaded_pdfs"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "TRANMINHDUONGDEPTRAI")
+FASTCHAT_URL = "https://glowing-workable-arachnid.ngrok-free.app/v1/"
+
+client = OpenAI(
+    api_key=OPENAI_API_KEY,
+    base_url=FASTCHAT_URL  # FastChat OpenAI API server
+)
 
 # Allow all origins (dev only)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # 🔥 In production, set this to your frontend domain
+    allow_origins=["*"], 
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -70,6 +79,63 @@ def query_api(payload: dict):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.post("/rag_chat")
+async def rag_chat(request: Request):
+    try:
+        body = await request.json()
+        print("DEBUG body:", body)
+
+        # Try to get user message from OpenAI-style format
+        user_message = ""
+        if "message" in body:
+            user_message = body["message"]
+        elif "messages" in body:
+            for m in body["messages"]:
+                if m.get("role") == "user":
+                    user_message = m.get("content", "")
+                    break
+
+        user_message = user_message.strip()
+        print("DEBUG user_message:", user_message)
+
+        if not user_message:
+            raise HTTPException(status_code=400, detail="No user message provided")
+
+        # Retrieval
+        top_chunks = query_top_k(user_message, k=3)
+        print("DEBUG top_chunks:", top_chunks)
+
+        context_texts = [chunk for chunk, _ in top_chunks]
+        context_block = "\n\n".join(context_texts)
+
+        rag_prompt = f"""You are a helpful assistant answering based on the provided context.
+Only use information from the context. If the answer is not in the context, say you don't know.
+
+Context:
+{context_block}
+
+Question:
+{user_message}"""
+
+        print("DEBUG rag_prompt:", rag_prompt[:200], "...")
+
+        def stream_generator():
+            stream = client.chat.completions.create(
+                model="Qwen3-0.6B",
+                messages=[{"role": "user", "content": rag_prompt}],
+                stream=True
+            )
+            for chunk in stream:
+                yield f"data: {chunk.model_dump_json()}\n\n"
+            yield "data: [DONE]\n\n"
+
+        return StreamingResponse(stream_generator(), media_type="text/event-stream")
+
+    except Exception as e:
+        print("ERROR in /rag_chat:", str(e))
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+    
 @app.get("/api_key")
 def expose_api_key():
     keys = dotenv_values(".env")

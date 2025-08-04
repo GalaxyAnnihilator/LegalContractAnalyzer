@@ -5,6 +5,7 @@ import uuid
 import chromadb
 from openai import OpenAI
 from dotenv import load_dotenv
+from backend.config import CHROMA_DB_PATH
 
 # ─── 1) ENVIRONMENT ──────────────────────────────────────────────────────────────
 load_dotenv()
@@ -13,7 +14,7 @@ BASE_URL = "https://glowing-workable-arachnid.ngrok-free.app/v1"  # or ngrok URL
 openai_client = OpenAI(api_key=API_KEY, base_url=BASE_URL)
 
 # ─── 2) CHROMA SETUP ─────────────────────────────────────────────────────────────
-chroma_client = chromadb.PersistentClient(path="./chroma_vector_db")
+chroma_client = chromadb.PersistentClient(path=CHROMA_DB_PATH)
 collection = chroma_client.get_or_create_collection("legal_docs")
 
 # ─── 3) CHUNKING UTILITIES ───────────────────────────────────────────────────────

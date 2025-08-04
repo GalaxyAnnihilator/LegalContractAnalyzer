@@ -2,7 +2,7 @@ import os
 import chromadb
 from openai import OpenAI
 from dotenv import load_dotenv
-
+from backend.config import CHROMA_DB_PATH
 # ─── ENVIRONMENT ──────────────────────────────────────────────────────────────
 load_dotenv()
 API_KEY = os.getenv("OPENAI_API_KEY", "TRANMINHDUONGDEPTRAI")
@@ -10,7 +10,7 @@ BASE_URL = "https://glowing-workable-arachnid.ngrok-free.app/v1"  # or ngrok URL
 openai_client = OpenAI(api_key=API_KEY, base_url=BASE_URL)
 
 # ─── CHROMA SETUP ─────────────────────────────────────────────────────────────
-chroma_client = chromadb.PersistentClient(path="./chroma_vector_db")
+chroma_client = chromadb.PersistentClient(path=CHROMA_DB_PATH)
 collection = chroma_client.get_or_create_collection("legal_docs")
 
 # ─── EMBEDDING FUNCTION ───────────────────────────────────────────────────────
@@ -37,7 +37,7 @@ def query_top_k(query_text, k=5):
 
 # Example usage:
 if __name__ == "__main__":
-    q = "Sẽ ra sao nếu một trong hai bên muốn chấm dứt Hợp đồng trước thời hạn?"
+    q = "Sẽ ra sao nếu một trong hai bên muốn chấm dứt hợp đồng trước thời hạn?"
     top_chunks = query_top_k(q, k=3)
     for chunk, dist in top_chunks:
         print(f"Score: {dist:.4f}\n{chunk}\n{'-'*40}")
