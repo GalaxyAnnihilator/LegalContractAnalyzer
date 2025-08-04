@@ -73,7 +73,8 @@ async function generateBotResponse(userMessage) {
   };
 
   const response = await fetch(
-    "https://glowing-workable-arachnid.ngrok-free.app/v1/chat/completions",
+    "http://localhost:3012/rag_chat",
+    // "https://glowing-workable-arachnid.ngrok-free.app/v1/chat/completions",
     {
       method: "POST",
       headers: {
