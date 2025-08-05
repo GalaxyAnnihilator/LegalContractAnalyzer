@@ -49,7 +49,7 @@ With the power of RAG, the answers are now more precise, the LLM experiences les
 
 ### RAG Pipeline:
 
-![](./figures/RAG_pipeline.svg)
+![](./figures/RAG_pipeline.png)
 
 ## Getting Started
 
