@@ -23,7 +23,7 @@ With the power of RAG, the answers are now more precise, the LLM experiences les
 
 [![Watch the video](https://img.youtube.com/vi/kvJwAMWmvj0/maxresdefault.jpg)](https://youtu.be/kvJwAMWmvj0)
 
-[Demo](https://youtu.be/kvJwAMWmvj0)
+![Demo](https://github.com/user-attachments/assets/9a040506-85c8-4ced-9762-d76ac41cd6cc)
 
 ## Features
 
