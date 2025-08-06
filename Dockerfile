@@ -7,14 +7,12 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-# Copy only requirements first for caching
-COPY backend/requirements.txt backend/requirements.txt
-
-# Install backend dependencies
-RUN pip install --no-cache-dir -r backend/requirements.txt
-
 # Rest of the code
 COPY . .
+
+# Install backend dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+
 
 # Expose backend and frontend ports
 EXPOSE 3012 8080

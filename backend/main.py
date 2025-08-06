@@ -11,6 +11,9 @@ from backend.ingest import ingest_all
 from backend.query import query_top_k
 from dotenv import dotenv_values
 import traceback
+from prometheus_client import start_http_server, Counter, Histogram, generate_latest, CONTENT_TYPE_LATEST
+from starlette.responses import Response
+
 app = FastAPI()
 
 UPLOAD_FOLDER = "downloaded_pdfs"
@@ -109,13 +112,13 @@ async def rag_chat(request: Request):
         context_block = "\n\n".join(context_texts)
 
         rag_prompt = f"""You are a helpful assistant answering based on the provided context.
-Only use information from the context. If the answer is not in the context, say you don't know.
+            Only use information from the context. If the answer is not in the context, say you don't know.
 
-Context:
-{context_block}
+            Context:
+            {context_block}
 
-Question:
-{user_message}"""
+            Question:
+        {user_message}"""
 
         print("DEBUG rag_prompt:", rag_prompt[:200], "...")
 
@@ -145,5 +148,37 @@ def expose_api_key():
 def root():
     return {"message": "Backend API is running <3. Try /upload_pdf , /retrieve_documents , /ingest, /query"}
 
+# ================MONITORING WITH PROMETHEUS==============
+# Define your metrics
+REQUEST_COUNT = Counter(
+    "user_query_count_total", "Total number of user queries", ["method", "endpoint"]
+)
+REQUEST_LATENCY = Histogram(
+    "rag_query_latency_seconds", "RAG end-to-end latency", ["method", "endpoint"]
+)
+FAILURE_COUNT = Counter(
+    "rag_failure_count", "Number of failed RAG calls", ["method", "endpoint"]
+)
+
+@app.middleware("http")
+async def metrics_middleware(request, call_next):
+    method = request.method
+    endpoint = request.url.path
+    REQUEST_COUNT.labels(method=method, endpoint=endpoint).inc()
+    with REQUEST_LATENCY.labels(method=method, endpoint=endpoint).time():
+        try:
+            response = await call_next(request)
+        except Exception:
+            FAILURE_COUNT.labels(method=method, endpoint=endpoint).inc()
+            raise
+    return response
+
+# Expose Prometheus metrics
+@app.get("/metrics")
+def metrics():
+    data = generate_latest()
+    return Response(content=data, media_type=CONTENT_TYPE_LATEST)
+
 if __name__ == "__main__":
-    os.system("uvicorn backend.main:app --reload --host 0.0.0.0 --port 3012")
+    import uvicorn
+    uvicorn.run("backend.main:app", host="0.0.0.0", port=3012, reload=True)

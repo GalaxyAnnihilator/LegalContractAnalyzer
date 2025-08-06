@@ -1,0 +1,9 @@
+# monitoring/dashboards/provisioning/dashboards.yml
+apiVersion: 1
+
+providers:
+  - name: 'RAG Dashboards'               # any friendly name
+    folder: ''                           # root folder in Grafana UI (empty = General)
+    type: file
+    options:
+      path: /etc/grafana/provisioning/dashboards  # where Docker mounts your JSONs

@@ -1,10 +1,11 @@
 chromadb
 pdfplumber
-os
-re
-uuid
 tqdm
 dotenv
 supabase
 fastapi
 uvicorn
+python-multipart
+openai
+prometheus_client
+starlette

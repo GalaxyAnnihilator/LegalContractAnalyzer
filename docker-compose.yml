@@ -1,0 +1,39 @@
+services:
+
+  app:
+    build: .
+    container_name: rag_app
+    ports:
+      - "3012:3012"
+      - "8080:8080"
+    environment:
+      - OPENAI_API_KEY=TRANMINHDUONGDEPTRAI
+      - SUPABASE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh1dGlydWpicW9sdnFhanppcGpwIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MzE2ODAwNywiZXhwIjoyMDY4NzQ0MDA3fQ.1cNOFUqZzf4j3WKjy7_XTOfbXcwBj2FLWChVJLsmVBc
+      - SUPABASE_URL=https://xutirujbqolvqajzipjp.supabase.co
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"    
+
+  grafana:
+     image: grafana/grafana:latest
+     container_name: grafana
+     depends_on:
+       - prometheus
+     ports:
+       - "3000:3000"
+     volumes:
+       - grafana_data:/var/lib/grafana
+       - ./monitoring/datasources:/etc/grafana/provisioning/datasources
+       - ./monitoring/dashboards/providers.yml:/etc/grafana/provisioning/dashboards/providers.yml:ro
+       - ./monitoring/dashboards/rag_dashboard.json:/var/lib/grafana/dashboards/rag_dashboard.json:ro
+
+
+volumes:
+  prometheus_data:
+  grafana_data:        

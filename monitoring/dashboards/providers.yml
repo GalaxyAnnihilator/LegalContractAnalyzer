@@ -1,0 +1,9 @@
+apiVersion: 1
+
+providers:
+  - name: "RAG Dashboards"
+    folder: ""                # root “General” folder in the UI
+    type: file
+    options:
+      # must match where you mounted the JSON above
+      path: /var/lib/grafana/dashboards
