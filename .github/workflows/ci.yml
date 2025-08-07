@@ -29,19 +29,38 @@ jobs:
       - name: Run tests
         run: pip install pytest && pytest --maxfail=2 --disable-warnings -q -v
 
-      - name: Install docker-compose
-        run: sudo apt-get install -y docker-compose
+      - name: Set up Docker Compose
+        uses: docker/setup-compose-action@v1
+        with:
+          version: latest
 
-      - name: Build Docker Compose
+      - name: Build services
         run: docker-compose build
+
+      - name: Start app
+        run: docker-compose up -d app
+
+      - name: Dump app logs
+        run: docker-compose logs rag_app
+
+      - name: Wait for app readiness
+        run: |
+          for i in {1..30}; do
+            if curl --fail http://localhost:3012/metrics; then break; fi
+            echo "waiting…"
+            sleep 2
+          done
 
       - name: Smoke test backend
         run: |
-          docker-compose up -d app
-          sleep 10
           curl --fail http://localhost:3012/metrics
-          curl --fail -X POST http://localhost:3012/query -d '{"messages":[{"role":"user","content":"ping"}]}' || exit 1
-          docker-compose down
+          curl --fail -X POST http://localhost:3012/query \
+            -H "Content-Type: application/json" \
+            -d '{"messages":[{"role":"user","content":"ping"}]}'
+
+      - name: Teardown
+        if: always()
+        run: docker-compose down
 
       - name: Upload coverage to Codecov
         if: success() && github.event_name != 'pull_request'
