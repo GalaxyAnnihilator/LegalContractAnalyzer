@@ -1,4 +1,4 @@
-name: Continuous Integration
+name: CI
 
 on:
   push:
@@ -12,6 +12,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Cache pip
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -20,8 +26,30 @@ jobs:
       - name: Install dependencies
         run: make install
 
-      - name: Lint
-        run: make lint
+      - name: Lint with flake8
+        run: |
+          pip install flake8
+          flake8 backend
+
+      - name: Type check with mypy
+        run: |
+          pip install mypy
+          mypy backend
 
       - name: Run tests
         run: make test
+
+      - name: Build Docker Compose
+        run: docker-compose build
+
+      - name: Smoke test backend
+        run: |
+          docker-compose up -d app
+          sleep 10
+          curl --fail http://localhost:3012/metrics
+          curl --fail -X POST http://localhost:3012/query -d '{"messages":[{"role":"user","content":"ping"}]}' || exit 1
+          docker-compose down
+
+      - name: Upload coverage to Codecov
+        if: success() && github.event_name != 'pull_request'
+        uses: codecov/codecov-action@v3

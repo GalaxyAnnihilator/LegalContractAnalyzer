@@ -158,25 +158,31 @@ GET  /api_key            | Exposes env vars (for dev)
 
 ## Monitoring
 
-In Grafana, I've built a dedicated Queries Dashboard to give you real-time insights into your RAG chatbot’s performance and reliability. Here’s what you’ll see:
+In Grafana, I've built a dedicated **Queries Dashboard** to give you real-time insights into your RAG chatbot’s performance and reliability. Here’s what you’ll see:
 
 1. **Request Throughput (QPS)**
-- A time-series graph showing how many RAG queries per second your service handles, so you can spot usage spikes or drops.
+
+   A time-series graph showing how many RAG queries per second your service handles, so you can spot usage spikes or drops.
 
 2. **Total Requests Over Time**
-- Cumulative counter displaying the growth of total user queries, helping you understand long-term trends.
+
+   Cumulative counter displaying the growth of total user queries, helping you understand long-term trends.
 
 3. **Failure Rate**
-- A gauge or line panel showing the percentage of failed RAG calls (errors divided by total queries), highlighting reliability issues.
+
+   A gauge or line panel showing the percentage of failed RAG calls (errors divided by total queries), highlighting reliability issues.
 
 4. **Average Latency**
-- A single-stat or time-series panel showing the average end-to-end response time, so you can track baseline performance.
+
+   A single-stat or time-series panel showing the average end-to-end response time, so you can track baseline performance.
 
 5. **Latency Percentiles** (p50, p95, p99)
-- Overlayed lines for median, 95th, and 99th percentile response times, which help you monitor your tail latencies and SLOs.
+
+   Overlayed lines for median, 95th, and 99th percentile response times, which help you monitor your tail latencies and SLOs.
 
 6. **Latency Distribution Heatmap**
-- A heatmap visualizing the full latency bucket distribution, so you can see how response times spread across buckets and detect outliers.
+
+   A heatmap visualizing the full latency bucket distribution, so you can see how response times spread across buckets and detect outliers.
 
 
 => All of these panels live in one dashboard, giving us a consolidated MLOps view of traffic, errors, and performance for our app.
@@ -225,3 +231,4 @@ In Grafana, I've built a dedicated Queries Dashboard to give you real-time insig
 ## Acknowledgement
 
 [@sleepysaki](https://github.com/sleepysaki) for DevOps guidance
+
