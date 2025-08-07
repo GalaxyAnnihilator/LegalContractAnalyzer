@@ -50,10 +50,11 @@ jobs:
             echo "waiting…"
             sleep 2
           done
+      - name: Smoke test /metrics
+        run: curl --fail http://localhost:3012/metrics
 
-      - name: Smoke test backend
+      - name: Smoke test /query
         run: |
-          curl --fail http://localhost:3012/metrics
           curl --fail -X POST http://localhost:3012/query \
             -H "Content-Type: application/json" \
             -d '{"messages":[{"role":"user","content":"ping"}]}'
