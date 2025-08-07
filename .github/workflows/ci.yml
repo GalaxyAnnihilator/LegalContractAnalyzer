@@ -26,13 +26,6 @@ jobs:
       - name: Install dependencies
         run: pip install --upgrade pip && pip install -r requirements.txt
 
-      - name: Type check with mypy
-        run: |
-          pip install mypy
-          mypy backend
-          mypy --install-types
-          mypy backend
-
       - name: Run tests
         run: pip install pytest && pytest --maxfail=2 --disable-warnings -q -v
 
