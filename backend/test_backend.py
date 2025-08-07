@@ -1,6 +1,6 @@
 import pytest
 from fastapi.testclient import TestClient
-from main import app
+from backend.main import app
 
 client = TestClient(app)
 
@@ -26,9 +26,9 @@ def test_query_no_message():
     assert "No user message found" in resp.json()["detail"]
 
 def test_query_with_message(monkeypatch):
-    # Patch query_top_k to avoid real DB/embedding calls
-    from main import query_top_k
-    monkeypatch.setattr("main.query_top_k", lambda msg, k=3: [("chunk1", 0.1), ("chunk2", 0.2)])
+    monkeypatch.setattr("backend.main.query_top_k",
+                        lambda msg, k=3: [("chunk1", 0.1), ("chunk2", 0.2)])
+
     payload = {"messages": [{"role": "user", "content": "test question"}]}
     resp = client.post("/query", json=payload)
     assert resp.status_code == 200
@@ -37,13 +37,13 @@ def test_query_with_message(monkeypatch):
     assert resp.json()["chunks"][0]["text"] == "chunk1"
 
 def test_ingest(monkeypatch):
-    monkeypatch.setattr("main.ingest_all", lambda path: None)
+    monkeypatch.setattr("backend.main.ingest_all", lambda path: None)
     resp = client.post("/ingest")
     assert resp.status_code == 200
     assert "Ingestion complete" in resp.json()["status"]
 
 def test_retrieve_documents(monkeypatch):
-    monkeypatch.setattr("main.download_all_files", lambda path: None)
+    monkeypatch.setattr("backend.main.download_all_files", lambda path: None)
     resp = client.post("/retrieve_documents")
     assert resp.status_code == 200
     assert "Retrieval of documents" in resp.json()["status"]
