@@ -29,6 +29,7 @@ jobs:
       - name: Type check with mypy
         run: |
           pip install mypy
+          mypy backend
           mypy --install-types
           mypy backend
 
