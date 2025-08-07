@@ -29,6 +29,9 @@ jobs:
       - name: Run tests
         run: pip install pytest && pytest --maxfail=2 --disable-warnings -q -v
 
+      - name: Install docker-compose
+        run: sudo apt-get install -y docker-compose
+
       - name: Build Docker Compose
         run: docker-compose build
 
