@@ -35,13 +35,13 @@ jobs:
           version: latest
 
       - name: Build services
-        run: docker-compose build
+        run: docker compose build
 
       - name: Start app
-        run: docker-compose up -d app
+        run: docker compose up -d app
 
       - name: Dump app logs
-        run: docker-compose logs rag_app
+        run: docker compose logs rag_app
 
       - name: Wait for app readiness
         run: |
@@ -60,7 +60,7 @@ jobs:
 
       - name: Teardown
         if: always()
-        run: docker-compose down
+        run: docker compose down
 
       - name: Upload coverage to Codecov
         if: success() && github.event_name != 'pull_request'
