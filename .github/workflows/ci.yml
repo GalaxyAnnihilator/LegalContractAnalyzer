@@ -38,7 +38,7 @@ jobs:
         run: docker compose build
 
       - name: Start app
-        run: docker compose up -d app
+        run: docker compose up -d rag_app
 
       - name: Dump app logs
         run: docker compose logs rag_app
