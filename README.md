@@ -39,10 +39,10 @@ With the power of RAG, the answers are now more precise, the LLM experiences les
 - [X] Supabase file storage..
 - [X] Real-time streaming response.
 - [X] Contextual retrieving + querying via ChromaDB.
+- [X] CI pipeline with Github Actions.
+- [ ] CD pipeline with HuggingFace Space.
 - [X] Monitoring with Prometheus & Grafana.
-- [ ] CI/CD Pipeline.
-- [ ] Evaluation of the system (hallucination metrics, etc).
-- [ ] Monitoring.
+- [ ] Evaluation of the system (automated tests, LLM-as-judge).
 
 
 ## Tech Stack
@@ -103,45 +103,30 @@ python -m http.server 8080 --directory frontend
 
 A **docker-compose.yml** is provided to run all the services together.
 
-```yml
-services:
-  app:
-    build: .
-    container_name: rag_app
-    ports:
-      - "3012:3012"
-      - "8080:8080"
-    environment:
-      - OPENAI_API_KEY=<your_key>
-      - SUPABASE_URL=<your_supabase_url>
-      - SUPABASE_KEY=<your_supabase_key>
+1. Build the services:
 
-  prometheus:
-    image: prom/prometheus:latest
-    container_name: prometheus
-    volumes:
-      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - prometheus_data:/prometheus
-    ports:
-      - "9090:9090"
-
-  grafana:
-    image: grafana/grafana:latest
-    container_name: grafana
-    depends_on:
-      - prometheus
-    volumes:
-      - grafana_data:/var/lib/grafana
-      - ./monitoring/datasources:/etc/grafana/provisioning/datasources
-      - ./monitoring/dashboards/providers.yml:/etc/grafana/provisioning/dashboards/providers.yml:ro
-      - ./monitoring/dashboards/rag_dashboard.json:/var/lib/grafana/dashboards/rag_dashboard.json:ro
-    ports:
-      - "3000:3000"
-
-volumes:
-  prometheus_data:
-  grafana_data:
+```bash
+docker compose build .
 ```
+
+2. Run all the services
+
+```bash
+docker compose up -d
+```
+
+Access the web app frontend at: http://localhost:8080
+
+Acces the monitoring Grafana at: http://localhost:3000 
+
+*Note*: Username / password for Grafana should be admin / admin, go to Dashboards and select the panel to view metrics
+
+Other ports if you're interested:
+
+Backend: http://localhost:3012
+
+Prometheus: http://localhost:9090
+
 
 ## API Endpoints
 
@@ -160,30 +145,14 @@ GET  /api_key            | Exposes env vars (for dev)
 
 In Grafana, I've built a dedicated **Queries Dashboard** to give you real-time insights into your RAG chatbot’s performance and reliability. Here’s what you’ll see:
 
-1. **Request Throughput (QPS)**
-
-   A time-series graph showing how many RAG queries per second your service handles, so you can spot usage spikes or drops.
-
-2. **Total Requests Over Time**
-
-   Cumulative counter displaying the growth of total user queries, helping you understand long-term trends.
-
-3. **Failure Rate**
-
-   A gauge or line panel showing the percentage of failed RAG calls (errors divided by total queries), highlighting reliability issues.
-
-4. **Average Latency**
-
-   A single-stat or time-series panel showing the average end-to-end response time, so you can track baseline performance.
-
-5. **Latency Percentiles** (p50, p95, p99)
-
-   Overlayed lines for median, 95th, and 99th percentile response times, which help you monitor your tail latencies and SLOs.
-
-6. **Latency Distribution Heatmap**
-
-   A heatmap visualizing the full latency bucket distribution, so you can see how response times spread across buckets and detect outliers.
-
+| **Metrics**| **Description**| **Usage / Use Case**|
+|------------|---------------|----------------------|
+| **Request Throughput (QPS)**      | Time-series graph showing how many RAG queries per second your service handles.| Spot usage spikes or drops in real-time.|
+| **Total Requests Over Time**      | Cumulative counter showing the growth of total user queries.| Understand long-term trends in user activity.|
+| **Failure Rate**                  | Gauge or line panel showing percentage of failed RAG calls (errors ÷ total queries).                             | Highlight reliability issues and monitor service health.|
+| **Average Latency**               | Single-stat or time-series panel showing average end-to-end response time.     | Track baseline performance and detect slowdowns.|
+| **Latency Percentiles** (p50, p95, p99) | Overlayed lines for median, 95th, and 99th percentile response times.| Monitor tail latencies and ensure SLO compliance.     |
+| **Latency Distribution Heatmap**  | Heatmap visualizing full latency bucket distribution.   | See response time spread and detect performance outliers.|
 
 => All of these panels live in one dashboard, giving us a consolidated MLOps view of traffic, errors, and performance for our app.
 

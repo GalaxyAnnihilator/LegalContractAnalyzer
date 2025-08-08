@@ -1,0 +1,29 @@
+name: Continuous Deployment
+on:
+    workflow_run:
+        workflows: ["Continuous Integration"]
+        types:
+            - completed
+
+    workflow_dispatch:
+
+jobs:
+    deploy:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v3
+
+            - name: Login to Hugging Face
+              env:
+                HF: ${{secrets.HF}}
+              run: |
+                pip install -U "huggingface_hub[cli]"
+                huggingface-cli login --token $(HF) --add-to-git-credential
+
+
+            - name: Push to Hugging Face Space
+              run: |
+                huggingface-cli upload tmdeptrai3012/LegalContractAnalyzer . --repo-type=space --commit-message="deploy $(date +'%Y-%m-%d %H:%M:%S')"
+                
+                    
+

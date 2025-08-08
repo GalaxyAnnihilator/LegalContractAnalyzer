@@ -1,8 +1,10 @@
 import os
 from supabase import create_client, Client
+from dotenv import load_dotenv
 
-SUPABASE_URL = 'https://xutirujbqolvqajzipjp.supabase.co'
-SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh1dGlydWpicW9sdnFhanppcGpwIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MzE2ODAwNywiZXhwIjoyMDY4NzQ0MDA3fQ.1cNOFUqZzf4j3WKjy7_XTOfbXcwBj2FLWChVJLsmVBc'
+load_dotenv()
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 BUCKET_NAME = 'legal-docs'
 LOCAL_FOLDER = 'downloaded_pdfs'
 
