@@ -1,6 +1,5 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException, Request
-from fastapi.responses import JSONResponse, StreamingResponse, FileResponse
-from fastapi.staticfiles import StaticFiles
+from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 import requests
 import os
@@ -145,12 +144,9 @@ def expose_api_key():
     keys = dotenv_values(".env")
     return keys        
 
-app.mount("/frontend",StaticFiles(directory="frontend"), name="frontend")
-
 @app.get("/")
 def root():
-    index_path = os.path.join("frontend", "index.html")
-    return FileResponse(index_path)
+    return {"message": "Backend API is running <3. Try /upload_pdf , /retrieve_documents , /ingest, /query"}
 
 # ================MONITORING WITH PROMETHEUS==============
 # Define your metrics
