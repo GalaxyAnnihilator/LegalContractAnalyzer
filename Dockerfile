@@ -13,7 +13,6 @@ COPY . .
 # Install backend dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-
 # Expose backend and frontend ports
 EXPOSE 3012 8080
 

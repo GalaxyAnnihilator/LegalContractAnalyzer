@@ -1,3 +1,8 @@
+---
+sdk: docker
+app_port: 8000
+---
+
 # Legal Contract Analyzer
 A MLOps project of an AI-powered RAG Chatbot for understanding and querying legal documents. Together with CI/CD, monitoring and visualization.
 
