@@ -1,12 +1,3 @@
----
-title: Basic Docker SDK Space
-emoji: 🐳
-colorFrom: purple
-colorTo: gray
-sdk: docker
-app_port: 8000
----
-
 # Legal Contract Analyzer
 A MLOps project of an AI-powered RAG Chatbot for understanding and querying legal documents. Together with CI/CD, monitoring and visualization.
 
@@ -34,6 +25,8 @@ With the power of RAG, the answers are now more precise, the LLM experiences les
 ![Quick Preview](./figures/demo.gif)
 
 [Watch the full demo video](https://youtu.be/kvJwAMWmvj0)
+
+Demo on Render: https://legalcontractanalyzer.onrender.com/
 
 ### Monitoring and Visualization with Prometheus + Grafana:
 
@@ -124,18 +117,19 @@ docker compose build .
 docker compose up -d
 ```
 
-Access the web app frontend at: http://localhost:8080
+3. Access the web app frontend at: http://localhost:8080
 
-Acces the monitoring Grafana at: http://localhost:3000 
+Start by uploading a file then ask a question like: "Thời hạn hợp đồng kéo dài trong bao lâu?"
+
+4. Acces the monitoring Grafana at: http://localhost:3000 
 
 *Note*: Username / password for Grafana should be admin / admin, go to Dashboards and select the panel to view metrics
 
-Other ports if you're interested:
+5. Other ports if you're interested:
 
 Backend: http://localhost:3012
 
 Prometheus: http://localhost:9090
-
 
 ## API Endpoints
 
@@ -148,7 +142,7 @@ Available endpoints for backend:
 |POST /ingest             | Embeds and stores chunks
 |POST /query              | Retrieves top-K chunks for a query
 |POST /rag_chat           | Full chat with RAG streaming
-GET  /api_key            | Exposes env vars (for dev)
+|GET  /api_key            | Exposes env vars (for dev)
 
 ## Monitoring
 

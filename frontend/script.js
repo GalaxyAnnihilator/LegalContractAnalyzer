@@ -254,14 +254,30 @@ document.addEventListener("DOMContentLoaded", function () {
         embeddedFiles[file.name] = true;
         uploadedCount++;
         renderFileList();
-        updateStatus(`Uploaded ${file.name} to Supabase!`, "success");
+        updateStatus("Uploaded " + file.name + " to Supabase!", "success");
       } catch (err) {
-        updateStatus(`Error uploading ${file.name}: ${err.message || err}`, "error");
+        updateStatus("Error uploading " + file.name + ": " + (err.message || err), "error");
       }
     }
+    // After uploading, call backend to retrieve and ingest documents
     if (uploadedCount > 0) {
-      updateStatus(`Uploaded ${uploadedCount} file(s) to Supabase!`, "success");
-      embeddingStatus.textContent = "Uploaded";
+      disableChat()
+      updateStatus("Calling backend to retrieve documents...", "processing");
+      try {
+        const retrieveRes = await fetch("http://localhost:3012/retrieve_documents", { method: "POST" });
+        if (!retrieveRes.ok) throw new Error("Failed to retrieve documents");
+        updateStatus("Retrieving documents complete. Now ingesting...", "processing");
+        console.log("Retrieving documents complete. Now ingesting...")
+        const ingestRes = await fetch("http://localhost:3012/ingest", { method: "POST" });
+        if (!ingestRes.ok) throw new Error("Failed to ingest documents");
+        updateStatus("Uploaded and embedded " + uploadedCount + " file(s) successfully!", "success");
+        console.log("Successfully embedded the documents!")
+        embeddingStatus.textContent = "Uploaded";
+      } catch (err) {
+        updateStatus("Error embedding documents: " + (err.message || err), "error");
+        embeddingStatus.textContent = "Error";
+      }
+      enableChat()
     } else {
       updateStatus("No new files uploaded.", "warning");
       embeddingStatus.textContent = "Ready";

@@ -1,4 +1,4 @@
-FROM python:3.10-slim
+FROM python:3.10-slim AS base
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
@@ -7,14 +7,21 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-# Rest of the code
-COPY . .
+# Install build dependencies only if needed (optional)
+# RUN apt-get update && apt-get install -y --no-install-recommends build-essential && rm -rf /var/lib/apt/lists/*
 
-# Install backend dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+# Copy only requirements first (cacheable layer)
+COPY requirements.txt .
+
+# Install backend dependencies (cached if requirements.txt hasn't changed)
+RUN --mount=type=cache,target=/root/.cache \
+    pip install -r requirements.txt
+
+# Now copy the rest of the application
+COPY . .
 
 # Expose backend and frontend ports
 EXPOSE 3012 8080
 
-# Start both backend (FastAPI) and serve frontend (using Python's http.server)
+# Start both backend and frontend
 CMD ["sh", "-c", "uvicorn backend.main:app --host 0.0.0.0 --port 3012 & python3 -m http.server 8080 --directory frontend"]
