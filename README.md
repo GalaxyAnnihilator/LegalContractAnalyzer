@@ -10,6 +10,7 @@ A MLOps project of an AI-powered RAG Chatbot for understanding and querying lega
 - [Getting Started](#getting-started)
 - [API Endpoints](#api-endpoints)
 - [Monitoring](#monitoring)
+- [Models Serving](#models-serving)
 - [Project Structure](#project-structure)
 - [License](#license)
 - [Acknowledgements](#acknowledgements)
@@ -42,7 +43,7 @@ Demo on Render: https://legalcontractanalyzer.onrender.com/
 - [X] Real-time streaming response.
 - [X] Contextual retrieving + querying via ChromaDB.
 - [X] CI pipeline with Github Actions.
-- [ ] CD pipeline with HuggingFace Space.
+- [X] CD pipeline with Render.
 - [X] Monitoring with Prometheus & Grafana.
 - [ ] Evaluation of the system (automated tests, LLM-as-judge).
 
@@ -195,6 +196,133 @@ In Grafana, I've built a dedicated **Queries Dashboard** to give you real-time i
 ├── README.md
 └── requirements.txt
 ```
+
+## Models Serving (optional)
+
+If you dig deep into the code, you will find the link https://glowing-workable-arachnid.ngrok-free.app/docs as the OpenAI API-like server, this is because I deploy it on my school server and then tunnel via ngrok xD. 
+
+So if you want to start your own model serving server (assuming you have a really strong DGX, H100, A100, or just 3 RTX 3090s like me xD), here's are the steps:
+
+### 1. Installation
+
+#### 1.1 Install FastChat
+
+FastChat is the backend server that can run multiple model workers and serve them via the OpenAI-compatible API.
+
+```bash
+# Create and activate virtual environment (optional but recommended)
+conda create -n fastchat python=3.10 -y
+conda activate fastchat
+
+# Install FastChat
+pip install fschat
+```
+
+**Tip:** If you want GPU acceleration, make sure PyTorch with CUDA is installed before installing FastChat:
+>
+> ```bash
+> pip install torch --index-url https://download.pytorch.org/whl/cu121
+> ```
+
+#### 1.2 Install ngrok
+
+ngrok will allow you to expose your FastChat API to the internet.
+
+```bash
+curl -sSL https://ngrok-agent.s3.amazonaws.com/ngrok.asc \
+  | sudo tee /etc/apt/trusted.gpg.d/ngrok.asc >/dev/null \
+  && echo "deb https://ngrok-agent.s3.amazonaws.com bookworm main" \
+  | sudo tee /etc/apt/sources.list.d/ngrok.list \
+  && sudo apt update \
+  && sudo apt install ngrok
+```
+
+If you have troubles downloading ngrok, try visiting their official website: https://ngrok.com/downloads/
+
+Log into [ngrok](https://dashboard.ngrok.com/get-started) and get your auth token:
+
+```bash
+ngrok config add-authtoken <YOUR_AUTH_TOKEN>
+```
+
+---
+
+### 2. 🖥️ Configurable FastChat Run Script
+
+In the folder /model_serving, check out the file `serve_models.sh` and make it executable:
+
+```bash
+chmod +x serve_models.sh
+```
+
+---
+
+### 3. Usage Examples
+
+#### Run with defaults (Qwen3-0.6B + Qwen3-Embedding-0.6B)
+
+```bash
+./model_serving/serve_models.sh
+```
+
+#### Run with custom models, ports, and ngrok URL
+
+```bash
+./model_serving/serve_models.sh Qwen/Qwen2-7B Qwen2-7B 21010 \
+                  Qwen/Qwen2-Embedding Qwen2-Embedding 21011 \
+                  8000 https://mycustomtunnel.ngrok-free.app
+```
+
+This will:
+
+* Run `Qwen2-7B` chat model on port `21010`.
+* Run `Qwen2-Embedding` embedding model on port `21011`.
+* Serve API on port `8000`.
+* Tunnel via the given ngrok URL.
+
+---
+
+### 4. 🔍 Testing the API
+
+List all models:
+
+```bash
+curl https://YOUR_NGROK_URL/v1/models
+```
+
+Or you may access it via a browser, for example: https://glowing-workable-arachnid.ngrok-free.app/v1/models
+
+Get embeddings:
+
+```bash
+curl https://YOUR_NGROK_URL/v1/embeddings \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "Qwen3-Embedding-0.6B",
+    "input": "FastChat is running two models now!"
+  }'
+```
+
+Chat completion:
+
+```bash
+curl https://YOUR_NGROK_URL/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "Qwen3-0.6B",
+    "messages": [{"role": "user", "content": "Hello from FastChat!"}]
+  }'
+```
+
+---
+
+### 5. Notes
+
+* Always **set different ports** for each worker.
+* `--worker-address` **must match** the worker’s host\:port so FastChat doesn’t overwrite registrations.
+* Ngrok **free plan** requires reserving the subdomain before you can set a fixed `--url`. You may go on ngrok website to claim your own free subdomain to use, otherwise, whenever you start a tunnel, it will be a random public url.
+* Contact me if you need help ;) I'll be glad to help.
+
 
 ## Licence
 

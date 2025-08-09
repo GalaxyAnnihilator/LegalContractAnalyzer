@@ -53,7 +53,7 @@ def chunk_paragraph(paragraph):
 # ─── 4) EMBEDDING VIA OPENAI ────────────────────────────────────────────────────
 def embed_via_openai(text_chunks):
     resp = openai_client.embeddings.create(
-        model="Qwen3-0.6B",
+        model="Qwen3-Embedding-0.6B",
         input=text_chunks
     )
     # resp.data is a list of objects with .index and .embedding
